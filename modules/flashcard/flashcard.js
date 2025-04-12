@@ -182,14 +182,22 @@ function loadPlugin(pluginName) {
                 </div>
             </div>
         </div>
-        <!-- Add marked.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     `;
 
-    initFlashcardApp();
+    // Load marked.js dynamically
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+    script.onload = initFlashcardApp;
+    document.head.appendChild(script);
 }
 
 function initFlashcardApp() {
+    // Check if marked is loaded
+    if (typeof marked === 'undefined') {
+        console.error('marked.js is not loaded');
+        return;
+    }
+
     let cards = [];
     let currentCardIndex = 0;
     let isFlipped = false;
