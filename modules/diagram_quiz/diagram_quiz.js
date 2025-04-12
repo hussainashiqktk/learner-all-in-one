@@ -98,6 +98,21 @@ function loadPlugin(pluginName) {
                 font-size: 12px;
                 cursor: pointer;
             }
+            /* New styles for creator answer popups */
+            .creator-answer-popup {
+                position: absolute;
+                background: white;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                z-index: 10;
+                min-width: 200px;
+            }
+            .creator-answer-popup input {
+                width: 100%;
+                margin-bottom: 5px;
+            }
         </style>
         <div class="diagram-quiz-app container-fluid">
             <ul class="nav nav-tabs mb-4" id="quizTabs" role="tablist">
@@ -144,12 +159,13 @@ function loadPlugin(pluginName) {
                     <div class="creator-tools">
                         <button class="btn btn-sm btn-primary" id="addSpot">Add Hidden Spot</button>
                         <button class="btn btn-sm btn-danger" id="removeSpot">Remove Last Spot</button>
+                        <button class="btn btn-success" id="saveQuiz">Save Quiz</button>
                     </div>
                     <div class="creator-canvas-container">
                         <canvas id="creatorCanvas"></canvas>
+                        <div id="creatorAnswerPopups"></div>
                     </div>
                     <div id="spotFormsContainer"></div>
-                    <button class="btn btn-success" id="saveQuiz">Save Quiz</button>
                 </div>
             </div>
         </div>
@@ -181,6 +197,7 @@ function initDiagramQuizApp() {
     const addSpot = document.getElementById('addSpot');
     const removeSpot = document.getElementById('removeSpot');
     const creatorCanvas = document.getElementById('creatorCanvas');
+    const creatorAnswerPopups = document.getElementById('creatorAnswerPopups');
     const spotFormsContainer = document.getElementById('spotFormsContainer');
     const saveQuiz = document.getElementById('saveQuiz');
 
@@ -328,14 +345,17 @@ function initDiagramQuizApp() {
                 const containerRect = answerContainer.getBoundingClientRect();
                 const quizRect = quizImage.getBoundingClientRect();
                 
-                let left = spotRect.right + 10;
-                if (left + containerRect.width > quizRect.right) {
-                    left = spotRect.left - containerRect.width - 10;
-                }
+                // Position the container directly above the spot
+                let left = spotRect.left;
+                let top = spotRect.top - containerRect.height - 10; // Position above the spot
                 
-                let top = spotRect.top;
-                if (top + containerRect.height > quizRect.bottom) {
-                    top = quizRect.bottom - containerRect.height - 10;
+                // Ensure the container doesn't go off-screen
+                if (top < quizRect.top) {
+                    top = spotRect.bottom + 10; // If it goes off-screen, position below
+                }
+
+                if (left + containerRect.width > quizRect.right) {
+                    left = quizRect.right - containerRect.width - 10;
                 }
                 
                 answerContainer.style.left = `${left - spotRect.left}px`;
@@ -489,6 +509,47 @@ function initDiagramQuizApp() {
         // Only add spot if it has reasonable size
         if (width > 10 && height > 10) {
             addSpotForm(x, y, width, height);
+            showAnswerPopup(x, y, width, height, hiddenSpots.length - 1);
+        }
+    }
+
+    function showAnswerPopup(x, y, width, height, spotIndex) {
+        const popup = document.createElement('div');
+        popup.className = 'creator-answer-popup';
+        popup.dataset.spotIndex = spotIndex;
+        
+        // Position the popup near the spot
+        const rect = creatorCanvas.getBoundingClientRect();
+        const scaleX = rect.width / creatorCanvas.width;
+        const scaleY = rect.height / creatorCanvas.height;
+        
+        popup.style.left = `${rect.left + (x + width + 5) * scaleX}px`;
+        popup.style.top = `${rect.top + y * scaleY}px`;
+        
+        popup.innerHTML = `
+            <input type="text" class="form-control spot-answer-input" placeholder="Enter answer for this spot">
+            <button class="btn btn-sm btn-primary save-spot-answer">Save</button>
+        `;
+        
+        popup.querySelector('.save-spot-answer').addEventListener('click', () => {
+            const answer = popup.querySelector('.spot-answer-input').value.trim();
+            if (answer) {
+                hiddenSpots[spotIndex].answer = answer;
+                creatorAnswerPopups.removeChild(popup);
+                updateSpotFormAnswer(spotIndex, answer);
+            }
+        });
+        
+        creatorAnswerPopups.appendChild(popup);
+        
+        // Focus the input
+        popup.querySelector('.spot-answer-input').focus();
+    }
+
+    function updateSpotFormAnswer(spotIndex, answer) {
+        const spotForms = spotFormsContainer.querySelectorAll('.spot-form');
+        if (spotForms[spotIndex]) {
+            spotForms[spotIndex].querySelector('.spot-answer').value = answer;
         }
     }
 
@@ -531,6 +592,12 @@ function initDiagramQuizApp() {
     function removeSpotForm(spotForm, spotId) {
         spotFormsContainer.removeChild(spotForm);
         hiddenSpots.splice(spotId, 1);
+        
+        // Remove any associated popup
+        const popup = creatorAnswerPopups.querySelector(`[data-spot-index="${spotId}"]`);
+        if (popup) {
+            creatorAnswerPopups.removeChild(popup);
+        }
         
         // Redraw canvas
         redrawCreatorCanvas();
@@ -610,6 +677,7 @@ function initDiagramQuizApp() {
         quizTitleInput.value = '';
         quizImageUpload.value = '';
         spotFormsContainer.innerHTML = '';
+        creatorAnswerPopups.innerHTML = '';
         hiddenSpots = [];
         creatorCanvas.width = 800;
         creatorCanvas.height = 600;
