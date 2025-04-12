@@ -22,7 +22,13 @@ def load_plugins():
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
                     if hasattr(module, 'register'):
-                        plugins[folder] = module.register()
+                        plugin_data = module.register()
+                        # Attempt to get the module name from the register function
+                        try:
+                            module_name = plugin_data['title']
+                        except (AttributeError, KeyError):
+                            module_name = folder
+                        plugins[module_name] = plugin_data
                 except Exception as e:
                     print(f"Error loading plugin {folder}: {str(e)}")
     
@@ -42,7 +48,7 @@ def plugin_page(plugin_name):
     if request.method == 'POST':
         return plugins[plugin_name]['handle_post'](request)
     
-    return render_template('base.html', plugin_name=plugin_name)
+    return render_template('base.html', plugin_name=plugin_name, plugins=plugins)
 
 # Add this new route to serve JS files from module directories
 @app.route('/module_assets/<module_name>/<path:filename>')
