@@ -103,7 +103,7 @@ function loadPlugin(pluginName) {
                 position: absolute;
                 background: white;
                 padding: 10px;
-                border: 1px solid #ddd;
+                border: 5px solid red;
                 border-radius: 5px;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                 z-index: 10;
@@ -513,38 +513,39 @@ function initDiagramQuizApp() {
         }
     }
 
-    function showAnswerPopup(x, y, width, height, spotIndex) {
-        const popup = document.createElement('div');
-        popup.className = 'creator-answer-popup';
-        popup.dataset.spotIndex = spotIndex;
-        
-        // Position the popup near the spot
-        const rect = creatorCanvas.getBoundingClientRect();
-        const scaleX = rect.width / creatorCanvas.width;
-        const scaleY = rect.height / creatorCanvas.height;
-        
-        popup.style.left = `${rect.left + (x + width + 5) * scaleX}px`;
-        popup.style.top = `${rect.top + y * scaleY}px`;
-        
-        popup.innerHTML = `
-            <input type="text" class="form-control spot-answer-input" placeholder="Enter answer for this spot">
-            <button class="btn btn-sm btn-primary save-spot-answer">Save</button>
-        `;
-        
-        popup.querySelector('.save-spot-answer').addEventListener('click', () => {
-            const answer = popup.querySelector('.spot-answer-input').value.trim();
-            if (answer) {
-                hiddenSpots[spotIndex].answer = answer;
-                creatorAnswerPopups.removeChild(popup);
-                updateSpotFormAnswer(spotIndex, answer);
-            }
-        });
-        
-        creatorAnswerPopups.appendChild(popup);
-        
-        // Focus the input
-        popup.querySelector('.spot-answer-input').focus();
-    }
+function showAnswerPopup(x, y, width, height, spotIndex) {
+    // Create the popup element
+    const popup = document.createElement('div');
+    popup.className = 'creator-answer-popup';
+    popup.dataset.spotIndex = spotIndex;
+    
+    // Position the popup near the spot
+    const rect = creatorCanvas.getBoundingClientRect();
+    const scaleX = rect.width / creatorCanvas.width;
+    const scaleY = rect.height / creatorCanvas.height;
+    
+    popup.style.left = `${x + width}px`;
+    popup.style.top = `${y - height - 10}px`;
+    
+    popup.innerHTML = `
+        <input type="text" class="form-control spot-answer-input" placeholder="Enter answer for this spot">
+        <button class="btn btn-sm btn-primary save-spot-answer">Save</button>
+    `;
+    
+    popup.querySelector('.save-spot-answer').addEventListener('click', () => {
+        const answer = popup.querySelector('.spot-answer-input').value.trim();
+        if (answer) {
+            hiddenSpots[spotIndex].answer = answer;
+            creatorAnswerPopups.removeChild(popup);
+            updateSpotFormAnswer(spotIndex, answer);
+        }
+    });
+    
+    creatorAnswerPopups.appendChild(popup);
+    
+    // Focus the input
+    popup.querySelector('.spot-answer-input').focus();
+}
 
     function updateSpotFormAnswer(spotIndex, answer) {
         const spotForms = spotFormsContainer.querySelectorAll('.spot-form');
