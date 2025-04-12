@@ -32,6 +32,12 @@ function loadPlugin(pluginName) {
                 box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                 z-index: 10;
                 display: none;
+                min-width: 250px;
+            }
+            .spot-tools {
+                display: flex;
+                gap: 5px;
+                margin-top: 5px;
             }
             .quiz-list {
                 display: grid;
@@ -117,14 +123,6 @@ function loadPlugin(pluginName) {
                         <div class="quiz-container">
                             <img id="quizImage" class="quiz-image" src="" alt="Quiz Diagram">
                             <div id="hiddenSpotsContainer"></div>
-                            <div id="spotAnswerContainer" class="spot-answer-container">
-                                <div class="input-group mb-2">
-                                    <input type="text" id="answerInput" class="form-control" placeholder="Enter your answer">
-                                    <button class="btn btn-primary" id="submitAnswer">Submit</button>
-                                </div>
-                                <div id="answerFeedback"></div>
-                                <button class="btn btn-sm btn-secondary" id="revealThis">Reveal This Spot</button>
-                            </div>
                         </div>
                         <div class="mt-3">
                             <button class="btn btn-secondary" id="revealAll">Reveal All Answers</button>
@@ -175,11 +173,6 @@ function initDiagramQuizApp() {
     const quizTitle = document.getElementById('quizTitle');
     const quizImage = document.getElementById('quizImage');
     const hiddenSpotsContainer = document.getElementById('hiddenSpotsContainer');
-    const spotAnswerContainer = document.getElementById('spotAnswerContainer');
-    const answerInput = document.getElementById('answerInput');
-    const submitAnswer = document.getElementById('submitAnswer');
-    const answerFeedback = document.getElementById('answerFeedback');
-    const revealThis = document.getElementById('revealThis');
     const revealAll = document.getElementById('revealAll');
     const backToQuizzes = document.getElementById('backToQuizzes');
     const deleteQuizBtn = document.getElementById('deleteQuizBtn');
@@ -198,8 +191,6 @@ function initDiagramQuizApp() {
     loadQuizzes();
 
     // Event listeners
-    submitAnswer.addEventListener('click', checkAnswer);
-    revealThis.addEventListener('click', revealCurrentSpot);
     revealAll.addEventListener('click', revealAllAnswers);
     backToQuizzes.addEventListener('click', showQuizList);
     deleteQuizBtn.addEventListener('click', deleteCurrentQuiz);
@@ -286,20 +277,6 @@ function initDiagramQuizApp() {
         });
     }
 
-    function showQuizList() {
-        quizSelection.style.display = 'block';
-        quizInterface.style.display = 'none';
-        currentQuiz = null;
-    }
-
-    function showQuizInterface() {
-        quizSelection.style.display = 'none';
-        quizInterface.style.display = 'block';
-        answerFeedback.innerHTML = '';
-        answerInput.value = '';
-        spotAnswerContainer.style.display = 'none';
-    }
-
     function renderHiddenSpots() {
         hiddenSpotsContainer.innerHTML = '';
         const imgRect = quizImage.getBoundingClientRect();
@@ -317,13 +294,38 @@ function initDiagramQuizApp() {
             spotElement.style.height = `${spot.height * scaleY}px`;
             spotElement.dataset.index = index;
             
+            // Create answer container for each spot
+            const answerContainer = document.createElement('div');
+            answerContainer.className = 'spot-answer-container';
+            answerContainer.id = `answer-container-${index}`;
+            answerContainer.innerHTML = `
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control spot-answer-input" placeholder="Enter your answer">
+                    <button class="btn btn-primary spot-submit-answer">Submit</button>
+                </div>
+                <div class="spot-feedback"></div>
+                <div class="spot-tools">
+                    <button class="btn btn-sm btn-secondary reveal-spot">Reveal</button>
+                </div>
+            `;
+            
+            spotElement.appendChild(answerContainer);
+            
             spotElement.addEventListener('click', (e) => {
                 e.stopPropagation();
                 currentSpotIndex = index;
                 
-                // Position answer container next to the spot
+                // Hide all other answer containers
+                document.querySelectorAll('.spot-answer-container').forEach(container => {
+                    container.style.display = 'none';
+                });
+                
+                // Show this spot's answer container
+                answerContainer.style.display = 'block';
+                
+                // Position container
                 const spotRect = spotElement.getBoundingClientRect();
-                const containerRect = spotAnswerContainer.getBoundingClientRect();
+                const containerRect = answerContainer.getBoundingClientRect();
                 const quizRect = quizImage.getBoundingClientRect();
                 
                 let left = spotRect.right + 10;
@@ -331,67 +333,69 @@ function initDiagramQuizApp() {
                     left = spotRect.left - containerRect.width - 10;
                 }
                 
-                spotAnswerContainer.style.left = `${left - quizRect.left}px`;
-                spotAnswerContainer.style.top = `${spotRect.top - quizRect.top}px`;
-                spotAnswerContainer.style.display = 'block';
+                let top = spotRect.top;
+                if (top + containerRect.height > quizRect.bottom) {
+                    top = quizRect.bottom - containerRect.height - 10;
+                }
                 
-                answerInput.focus();
+                answerContainer.style.left = `${left - spotRect.left}px`;
+                answerContainer.style.top = `${top - spotRect.top}px`;
+                
+                // Focus input
+                answerContainer.querySelector('.spot-answer-input').focus();
+            });
+            
+            // Event listeners for this spot's answer container
+            answerContainer.querySelector('.spot-submit-answer').addEventListener('click', () => {
+                const answer = answerContainer.querySelector('.spot-answer-input').value.trim();
+                if (!answer) return;
+                
+                fetch('/plugin/diagram_quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=check_answer&quiz_id=${currentQuiz.id}&spot_index=${index}&answer=${encodeURIComponent(answer)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const feedbackDiv = answerContainer.querySelector('.spot-feedback');
+                    if (data.is_correct) {
+                        feedbackDiv.innerHTML = `<div class="alert alert-success">Correct! The answer is: ${data.correct_answer}</div>`;
+                    } else {
+                        feedbackDiv.innerHTML = `<div class="alert alert-danger">Incorrect. Try again!</div>`;
+                    }
+                    answerContainer.querySelector('.spot-answer-input').value = '';
+                });
+            });
+            
+            answerContainer.querySelector('.reveal-spot').addEventListener('click', () => {
+                spotElement.style.display = 'none';
+                const feedbackDiv = answerContainer.querySelector('.spot-feedback');
+                feedbackDiv.innerHTML = `<div class="alert alert-info">Answer: ${hiddenSpots[index].answer}</div>`;
             });
             
             hiddenSpotsContainer.appendChild(spotElement);
         });
     }
 
-    function checkAnswer() {
-        const answer = answerInput.value.trim();
-        if (!answer) return;
-
-        fetch('/plugin/diagram_quiz', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=check_answer&quiz_id=${currentQuiz.id}&spot_index=${currentSpotIndex}&answer=${encodeURIComponent(answer)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.is_correct) {
-                answerFeedback.innerHTML = `<div class="alert alert-success">Correct! The answer is: ${data.correct_answer}</div>`;
-                // Move to next spot
-                currentSpotIndex = (currentSpotIndex + 1) % hiddenSpots.length;
-            } else {
-                answerFeedback.innerHTML = `<div class="alert alert-danger">Incorrect. Try again!</div>`;
-            }
-            answerInput.value = '';
-        });
-    }
-
-    function revealCurrentSpot() {
-        if (!currentQuiz || currentSpotIndex >= hiddenSpots.length) return;
-        
-        const spotElement = hiddenSpotsContainer.children[currentSpotIndex];
-        spotElement.style.display = 'none';
-        
-        answerFeedback.innerHTML = `<div class="alert alert-info">Answer: ${hiddenSpots[currentSpotIndex].answer}</div>`;
-    }
-
     function revealAllAnswers() {
-        fetch('/plugin/diagram_quiz', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `action=reveal_all&quiz_id=${currentQuiz.id}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            Array.from(hiddenSpotsContainer.children).forEach((spot, index) => {
-                spot.style.display = 'none';
-            });
-            
-            let feedback = '<h5>All Answers:</h5><ul>';
-            data.hidden_spots.forEach((spot, index) => {
-                feedback += `<li>Spot ${index + 1}: ${spot.answer}</li>`;
-            });
-            feedback += '</ul>';
-            answerFeedback.innerHTML = feedback;
+        Array.from(hiddenSpotsContainer.children).forEach((spot, index) => {
+            spot.style.display = 'none';
+            const feedbackDiv = spot.querySelector('.spot-feedback');
+            if (feedbackDiv) {
+                feedbackDiv.innerHTML = `<div class="alert alert-info">Answer: ${hiddenSpots[index].answer}</div>`;
+            }
         });
+    }
+
+    function showQuizList() {
+        quizSelection.style.display = 'block';
+        quizInterface.style.display = 'none';
+        currentQuiz = null;
+    }
+
+    function showQuizInterface() {
+        quizSelection.style.display = 'none';
+        quizInterface.style.display = 'block';
     }
 
     function handleImageUpload(e) {
@@ -455,7 +459,7 @@ function initDiagramQuizApp() {
         
         // Draw all existing spots
         hiddenSpots.forEach(spot => {
-            canvasCtx.fillStyle = 'rgba(255, 192, 203, 0.5)';
+            canvasCtx.fillStyle = 'pink';
             canvasCtx.fillRect(spot.x, spot.y, spot.width, spot.height);
             canvasCtx.strokeStyle = 'red';
             canvasCtx.strokeRect(spot.x, spot.y, spot.width, spot.height);
@@ -553,7 +557,7 @@ function initDiagramQuizApp() {
         
         canvasCtx.drawImage(creatorImage, 0, 0);
         hiddenSpots.forEach(spot => {
-            canvasCtx.fillStyle = 'rgba(255, 192, 203, 0.5)';
+            canvasCtx.fillStyle = 'pink';
             canvasCtx.fillRect(spot.x, spot.y, spot.width, spot.height);
             canvasCtx.strokeStyle = 'red';
             canvasCtx.strokeRect(spot.x, spot.y, spot.width, spot.height);
@@ -613,10 +617,12 @@ function initDiagramQuizApp() {
         creatorImage = null;
     }
 
-    // Handle clicks outside the answer container to hide it
+    // Handle clicks outside the answer containers to hide them
     document.addEventListener('click', (e) => {
-        if (!spotAnswerContainer.contains(e.target)) {
-            spotAnswerContainer.style.display = 'none';
+        if (!e.target.closest('.spot-answer-container') && !e.target.closest('.hidden-spot')) {
+            document.querySelectorAll('.spot-answer-container').forEach(container => {
+                container.style.display = 'none';
+            });
         }
     });
 }
