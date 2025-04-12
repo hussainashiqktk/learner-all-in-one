@@ -1,0 +1,69 @@
+{
+  "cards": [
+    {
+      "id": 1,
+      "front": "dfgfdg",
+      "back": "fdgfdg",
+      "category": "test",
+      "tags": [
+        "dfgfdg"
+      ],
+      "due_date": "5256-08-11T10:10:02.192561",
+      "interval": 1180235.7100840271,
+      "ease": 2.58
+    },
+    {
+      "id": 2,
+      "front": "Glad it\u2019s working now! To move the flashcards.json file from the root directory to the modules/flashcard/ folder, we just need to update the DATA_FILE path in flashcard.py. This will keep the storage neatly inside the module\u2019s directory.",
+      "back": "Yes",
+      "category": "test",
+      "tags": [
+        "f"
+      ],
+      "due_date": "2025-03-28T17:11:42.880814",
+      "interval": 1,
+      "ease": 1.4200000000000006
+    },
+    {
+      "id": 3,
+      "front": "# H1\r\n<b>test<b>",
+      "back": "dsfds",
+      "category": "test",
+      "tags": [],
+      "due_date": "2025-03-27T17:12:08.324822",
+      "interval": 1,
+      "ease": 2.5
+    },
+    {
+      "id": 4,
+      "front": "sdfdsfds",
+      "back": "dsfdsfds",
+      "category": "test",
+      "tags": [
+        "dsfdsf"
+      ],
+      "due_date": "2025-04-13T00:19:08.010843",
+      "interval": 1,
+      "ease": 2.5
+    },
+    {
+      "id": 5,
+      "front": "dsfdsf",
+      "back": "dsfdsfdsfds",
+      "category": "test",
+      "tags": [
+        "dsfsdf"
+      ],
+      "due_date": "2025-04-13T00:19:21.191641",
+      "interval": 1,
+      "ease": 2.5
+    }
+  ],
+  "categories": [
+    "test"
+  ],
+  "statistics": {
+    "total_study_sessions": 44,
+    "cards_learned": 9
+  }
+}

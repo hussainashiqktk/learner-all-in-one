@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    {% for name, plugin in plugins.items() %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">{{ plugin['title'] }}</h5>
+                <p class="card-text">{{ plugin['description'] }}</p>
+                <a href="{{ url_for('plugin_page', plugin_name=name) }}" class="btn btn-primary">Launch</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

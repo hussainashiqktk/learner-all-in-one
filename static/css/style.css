@@ -1,0 +1,72 @@
+.card {
+    transition: transform 0.2s;
+    border-radius: 15px; /* Softer corners */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow */
+}
+.card:hover {
+    transform: scale(1.05);
+}
+
+.flashcard-card {
+    perspective: 1000px;
+    height: 450px; /* Slightly taller for better visibility */
+    width: 100%;
+    max-width: 1100px; /* Slightly wider */
+    margin: 0 auto;
+}
+
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s; /* Added filter transition for blur */
+    transform-style: preserve-3d;
+    filter: none; /* Default clear state */
+}
+
+
+.flashcard-card.flipped .card-inner {
+    transform: rotateY(180deg);
+    filter: none; /* No blur when flipped */
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #f9f9f9, #ffffff); /* Subtle gradient */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+}
+
+.card-front {
+    z-index: 2;
+}
+
+.card-back {
+    transform: rotateY(180deg);
+}
+
+.card-text {
+    font-size: 1.8rem; /* Larger text */
+    font-weight: 600; /* Bolder */
+    color: #222; /* Darker for contrast */
+    word-wrap: break-word;
+    max-height: 100%;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.tags-container {
+    margin-top: 15px; /* More space for tags */
+}
+
+.badge {
+    font-size: 1rem; /* Slightly larger badges */
+    padding: 0.5em 1em;
+}
