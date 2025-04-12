@@ -10,7 +10,7 @@ function loadPlugin(pluginName) {
             .quiz-container {
                 position: relative;
                 margin: 20px auto;
-                max-width: 800px;
+                max-width: 100%;
             }
             .quiz-image {
                 max-width: 100%;
@@ -23,8 +23,15 @@ function loadPlugin(pluginName) {
                 cursor: pointer;
                 border: 2px dashed red;
             }
-            .answer-input {
-                margin-top: 20px;
+            .spot-answer-container {
+                position: absolute;
+                background: white;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                z-index: 10;
+                display: none;
             }
             .quiz-list {
                 display: grid;
@@ -38,19 +45,29 @@ function loadPlugin(pluginName) {
                 border-radius: 5px;
                 cursor: pointer;
                 transition: all 0.3s;
+                position: relative;
             }
             .quiz-card:hover {
                 box-shadow: 0 0 10px rgba(0,0,0,0.1);
             }
-            .quiz-title {
-                font-weight: bold;
-                margin-bottom: 5px;
+            .quiz-card .delete-btn {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: red;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                cursor: pointer;
             }
-            .creator-canvas {
+            .creator-canvas-container {
                 position: relative;
-                border: 1px solid #ddd;
                 margin: 20px auto;
-                max-width: 800px;
+                max-width: 100%;
+                display: inline-block;
             }
             .creator-tools {
                 margin: 10px 0;
@@ -60,6 +77,20 @@ function loadPlugin(pluginName) {
                 padding: 15px;
                 background: #f5f5f5;
                 border-radius: 5px;
+                position: relative;
+            }
+            .spot-form .delete-spot-btn {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: red;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                cursor: pointer;
             }
         </style>
         <div class="diagram-quiz-app container-fluid">
@@ -79,17 +110,23 @@ function loadPlugin(pluginName) {
                         <div class="quiz-list" id="quizList"></div>
                     </div>
                     <div id="quizInterface" style="display: none;">
-                        <h4 id="quizTitle"></h4>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 id="quizTitle"></h4>
+                            <button class="btn btn-sm btn-danger" id="deleteQuizBtn">Delete Quiz</button>
+                        </div>
                         <div class="quiz-container">
                             <img id="quizImage" class="quiz-image" src="" alt="Quiz Diagram">
                             <div id="hiddenSpotsContainer"></div>
-                        </div>
-                        <div class="answer-input">
-                            <div class="input-group mb-3">
-                                <input type="text" id="answerInput" class="form-control" placeholder="Enter your answer">
-                                <button class="btn btn-primary" id="submitAnswer">Submit</button>
+                            <div id="spotAnswerContainer" class="spot-answer-container">
+                                <div class="input-group mb-2">
+                                    <input type="text" id="answerInput" class="form-control" placeholder="Enter your answer">
+                                    <button class="btn btn-primary" id="submitAnswer">Submit</button>
+                                </div>
+                                <div id="answerFeedback"></div>
+                                <button class="btn btn-sm btn-secondary" id="revealThis">Reveal This Spot</button>
                             </div>
-                            <div id="answerFeedback"></div>
+                        </div>
+                        <div class="mt-3">
                             <button class="btn btn-secondary" id="revealAll">Reveal All Answers</button>
                             <button class="btn btn-outline-primary" id="backToQuizzes">Back to Quizzes</button>
                         </div>
@@ -110,8 +147,7 @@ function loadPlugin(pluginName) {
                         <button class="btn btn-sm btn-primary" id="addSpot">Add Hidden Spot</button>
                         <button class="btn btn-sm btn-danger" id="removeSpot">Remove Last Spot</button>
                     </div>
-                    <div class="creator-canvas">
-                        <img id="creatorImagePreview" style="max-width: 100%; display: none;">
+                    <div class="creator-canvas-container">
                         <canvas id="creatorCanvas"></canvas>
                     </div>
                     <div id="spotFormsContainer"></div>
@@ -132,41 +168,41 @@ function initDiagramQuizApp() {
     let canvasCtx = null;
     let currentSpot = null;
 
+    // DOM elements
     const quizList = document.getElementById('quizList');
     const quizSelection = document.getElementById('quizSelection');
     const quizInterface = document.getElementById('quizInterface');
     const quizTitle = document.getElementById('quizTitle');
     const quizImage = document.getElementById('quizImage');
     const hiddenSpotsContainer = document.getElementById('hiddenSpotsContainer');
+    const spotAnswerContainer = document.getElementById('spotAnswerContainer');
     const answerInput = document.getElementById('answerInput');
     const submitAnswer = document.getElementById('submitAnswer');
     const answerFeedback = document.getElementById('answerFeedback');
+    const revealThis = document.getElementById('revealThis');
     const revealAll = document.getElementById('revealAll');
     const backToQuizzes = document.getElementById('backToQuizzes');
+    const deleteQuizBtn = document.getElementById('deleteQuizBtn');
     const quizTitleInput = document.getElementById('quizTitleInput');
     const quizImageUpload = document.getElementById('quizImageUpload');
     const addSpot = document.getElementById('addSpot');
     const removeSpot = document.getElementById('removeSpot');
-    const creatorImagePreview = document.getElementById('creatorImagePreview');
     const creatorCanvas = document.getElementById('creatorCanvas');
     const spotFormsContainer = document.getElementById('spotFormsContainer');
     const saveQuiz = document.getElementById('saveQuiz');
 
     // Initialize canvas
     canvasCtx = creatorCanvas.getContext('2d');
-    creatorCanvas.width = 800;
-    creatorCanvas.height = 600;
 
     // Load quizzes list
     loadQuizzes();
 
     // Event listeners
     submitAnswer.addEventListener('click', checkAnswer);
+    revealThis.addEventListener('click', revealCurrentSpot);
     revealAll.addEventListener('click', revealAllAnswers);
-    backToQuizzes.addEventListener('click', () => {
-        quizInterface.style.display = 'none';
-        quizSelection.style.display = 'block';
-    });
+    backToQuizzes.addEventListener('click', showQuizList);
+    deleteQuizBtn.addEventListener('click', deleteCurrentQuiz);
     quizImageUpload.addEventListener('change', handleImageUpload);
     addSpot.addEventListener('click', startAddingSpot);
     removeSpot.addEventListener('click', removeLastSpot);
@@ -190,11 +226,42 @@ function initDiagramQuizApp() {
                 quizCard.innerHTML = `
                     <div class="quiz-title">${quiz.title}</div>
                     <small>ID: ${quiz.id}</small>
+                    <button class="delete-btn" data-id="${quiz.id}">×</button>
                 `;
+                quizCard.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('Delete this quiz?')) {
+                        deleteQuiz(quiz.id);
+                    }
+                });
                 quizCard.addEventListener('click', () => loadQuiz(quiz.id));
                 quizList.appendChild(quizCard);
             });
         });
+    }
+
+    function deleteQuiz(quizId) {
+        fetch('/plugin/diagram_quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `action=delete_quiz&quiz_id=${quizId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadQuizzes();
+                if (currentQuiz && currentQuiz.id === quizId) {
+                    showQuizList();
+                }
+            }
+        });
+    }
+
+    function deleteCurrentQuiz() {
+        if (!currentQuiz) return;
+        if (confirm('Delete this quiz?')) {
+            deleteQuiz(currentQuiz.id);
+        }
     }
 
     function loadQuiz(quizId) {
@@ -209,18 +276,28 @@ function initDiagramQuizApp() {
             quizTitle.textContent = data.title;
             quizImage.src = `data:image/png;base64,${data.image}`;
             
-            // Wait for image to load before rendering spots
             quizImage.onload = function() {
-                hiddenSpots = data.hidden_spots;
+                hiddenSpots = data.hidden_spots || [];
                 currentSpotIndex = 0;
                 renderHiddenSpots();
             };
             
-            quizSelection.style.display = 'none';
-            quizInterface.style.display = 'block';
-            answerFeedback.innerHTML = '';
-            answerInput.value = '';
+            showQuizInterface();
         });
+    }
+
+    function showQuizList() {
+        quizSelection.style.display = 'block';
+        quizInterface.style.display = 'none';
+        currentQuiz = null;
+    }
+
+    function showQuizInterface() {
+        quizSelection.style.display = 'none';
+        quizInterface.style.display = 'block';
+        answerFeedback.innerHTML = '';
+        answerInput.value = '';
+        spotAnswerContainer.style.display = 'none';
     }
 
     function renderHiddenSpots() {
@@ -239,10 +316,28 @@ function initDiagramQuizApp() {
             spotElement.style.width = `${spot.width * scaleX}px`;
             spotElement.style.height = `${spot.height * scaleY}px`;
             spotElement.dataset.index = index;
-            spotElement.addEventListener('click', () => {
+            
+            spotElement.addEventListener('click', (e) => {
+                e.stopPropagation();
                 currentSpotIndex = index;
+                
+                // Position answer container next to the spot
+                const spotRect = spotElement.getBoundingClientRect();
+                const containerRect = spotAnswerContainer.getBoundingClientRect();
+                const quizRect = quizImage.getBoundingClientRect();
+                
+                let left = spotRect.right + 10;
+                if (left + containerRect.width > quizRect.right) {
+                    left = spotRect.left - containerRect.width - 10;
+                }
+                
+                spotAnswerContainer.style.left = `${left - quizRect.left}px`;
+                spotAnswerContainer.style.top = `${spotRect.top - quizRect.top}px`;
+                spotAnswerContainer.style.display = 'block';
+                
                 answerInput.focus();
             });
+            
             hiddenSpotsContainer.appendChild(spotElement);
         });
     }
@@ -269,6 +364,15 @@ function initDiagramQuizApp() {
         });
     }
 
+    function revealCurrentSpot() {
+        if (!currentQuiz || currentSpotIndex >= hiddenSpots.length) return;
+        
+        const spotElement = hiddenSpotsContainer.children[currentSpotIndex];
+        spotElement.style.display = 'none';
+        
+        answerFeedback.innerHTML = `<div class="alert alert-info">Answer: ${hiddenSpots[currentSpotIndex].answer}</div>`;
+    }
+
     function revealAllAnswers() {
         fetch('/plugin/diagram_quiz', {
             method: 'POST',
@@ -277,6 +381,10 @@ function initDiagramQuizApp() {
         })
         .then(response => response.json())
         .then(data => {
+            Array.from(hiddenSpotsContainer.children).forEach((spot, index) => {
+                spot.style.display = 'none';
+            });
+            
             let feedback = '<h5>All Answers:</h5><ul>';
             data.hidden_spots.forEach((spot, index) => {
                 feedback += `<li>Spot ${index + 1}: ${spot.answer}</li>`;
@@ -300,11 +408,6 @@ function initDiagramQuizApp() {
                 
                 // Draw image on canvas
                 canvasCtx.drawImage(creatorImage, 0, 0, creatorCanvas.width, creatorCanvas.height);
-                
-                // Show preview (scaled down)
-                creatorImagePreview.src = event.target.result;
-                creatorImagePreview.style.display = 'block';
-                creatorImagePreview.style.maxWidth = '100%';
             };
             creatorImage.src = event.target.result;
         };
@@ -352,7 +455,7 @@ function initDiagramQuizApp() {
         
         // Draw all existing spots
         hiddenSpots.forEach(spot => {
-            canvasCtx.fillStyle = 'pink';
+            canvasCtx.fillStyle = 'rgba(255, 192, 203, 0.5)';
             canvasCtx.fillRect(spot.x, spot.y, spot.width, spot.height);
             canvasCtx.strokeStyle = 'red';
             canvasCtx.strokeRect(spot.x, spot.y, spot.width, spot.height);
@@ -362,7 +465,7 @@ function initDiagramQuizApp() {
         currentSpot.width = mouseX - currentSpot.startX;
         currentSpot.height = mouseY - currentSpot.startY;
         
-        canvasCtx.fillStyle = 'pink';
+        canvasCtx.fillStyle = 'rgba(255, 192, 203, 0.7)';
         canvasCtx.fillRect(currentSpot.startX, currentSpot.startY, currentSpot.width, currentSpot.height);
         canvasCtx.strokeStyle = 'red';
         canvasCtx.strokeRect(currentSpot.startX, currentSpot.startY, currentSpot.width, currentSpot.height);
@@ -373,8 +476,16 @@ function initDiagramQuizApp() {
         
         currentSpot.drawing = false;
         
-        // Add spot form
-        addSpotForm(currentSpot.startX, currentSpot.startY, currentSpot.width, currentSpot.height);
+        // Ensure width and height are positive
+        const x = currentSpot.width < 0 ? currentSpot.startX + currentSpot.width : currentSpot.startX;
+        const y = currentSpot.height < 0 ? currentSpot.startY + currentSpot.height : currentSpot.startY;
+        const width = Math.abs(currentSpot.width);
+        const height = Math.abs(currentSpot.height);
+        
+        // Only add spot if it has reasonable size
+        if (width > 10 && height > 10) {
+            addSpotForm(x, y, width, height);
+        }
     }
 
     function addSpotForm(x, y, width, height) {
@@ -382,6 +493,7 @@ function initDiagramQuizApp() {
         const spotForm = document.createElement('div');
         spotForm.className = 'spot-form';
         spotForm.innerHTML = `
+            <button class="delete-spot-btn">×</button>
             <h5>Hidden Spot #${spotId + 1}</h5>
             <div class="mb-3">
                 <label class="form-label">Position: (${Math.round(x)}, ${Math.round(y)}) Size: ${Math.round(width)}x${Math.round(height)}</label>
@@ -395,9 +507,14 @@ function initDiagramQuizApp() {
                 <input type="text" class="form-control spot-answer" placeholder="Enter correct answer">
             </div>
         `;
+        
+        spotForm.querySelector('.delete-spot-btn').addEventListener('click', () => {
+            removeSpotForm(spotForm, spotId);
+        });
+        
         spotFormsContainer.appendChild(spotForm);
         
-        // Add to hidden spots array (answer will be updated when saving)
+        // Add to hidden spots array
         hiddenSpots.push({
             x: x,
             y: y,
@@ -407,16 +524,36 @@ function initDiagramQuizApp() {
         });
     }
 
-    function removeLastSpot() {
-        if (hiddenSpots.length === 0) return;
-        
-        hiddenSpots.pop();
-        spotFormsContainer.removeChild(spotFormsContainer.lastChild);
+    function removeSpotForm(spotForm, spotId) {
+        spotFormsContainer.removeChild(spotForm);
+        hiddenSpots.splice(spotId, 1);
         
         // Redraw canvas
+        redrawCreatorCanvas();
+        
+        // Reindex remaining forms
+        const forms = spotFormsContainer.querySelectorAll('.spot-form');
+        forms.forEach((form, index) => {
+            form.querySelector('h5').textContent = `Hidden Spot #${index + 1}`;
+        });
+    }
+
+    function removeLastSpot() {
+        if (hiddenSpots.length === 0) return;
+        const lastForm = spotFormsContainer.lastChild;
+        if (lastForm) {
+            spotFormsContainer.removeChild(lastForm);
+        }
+        hiddenSpots.pop();
+        redrawCreatorCanvas();
+    }
+
+    function redrawCreatorCanvas() {
+        if (!creatorImage) return;
+        
         canvasCtx.drawImage(creatorImage, 0, 0);
         hiddenSpots.forEach(spot => {
-            canvasCtx.fillStyle = 'pink';
+            canvasCtx.fillStyle = 'rgba(255, 192, 203, 0.5)';
             canvasCtx.fillRect(spot.x, spot.y, spot.width, spot.height);
             canvasCtx.strokeStyle = 'red';
             canvasCtx.strokeRect(spot.x, spot.y, spot.width, spot.height);
@@ -455,14 +592,7 @@ function initDiagramQuizApp() {
         .then(data => {
             alert('Quiz created successfully!');
             // Reset form
-            quizTitleInput.value = '';
-            quizImageUpload.value = '';
-            creatorImagePreview.src = '';
-            creatorImagePreview.style.display = 'none';
-            spotFormsContainer.innerHTML = '';
-            hiddenSpots = [];
-            canvasCtx.clearRect(0, 0, creatorCanvas.width, creatorCanvas.height);
-            
+            resetCreatorForm();
             // Reload quizzes list
             loadQuizzes();
         })
@@ -471,4 +601,22 @@ function initDiagramQuizApp() {
             alert('Error creating quiz');
         });
     }
+
+    function resetCreatorForm() {
+        quizTitleInput.value = '';
+        quizImageUpload.value = '';
+        spotFormsContainer.innerHTML = '';
+        hiddenSpots = [];
+        creatorCanvas.width = 800;
+        creatorCanvas.height = 600;
+        canvasCtx.clearRect(0, 0, creatorCanvas.width, creatorCanvas.height);
+        creatorImage = null;
+    }
+
+    // Handle clicks outside the answer container to hide it
+    document.addEventListener('click', (e) => {
+        if (!spotAnswerContainer.contains(e.target)) {
+            spotAnswerContainer.style.display = 'none';
+        }
+    });
 }

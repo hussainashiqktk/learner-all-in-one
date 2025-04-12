@@ -102,6 +102,13 @@ def register():
                 'is_correct': is_correct,
                 'correct_answer': quiz['hidden_spots'][spot_index]['answer']
             })
+        
+        # Add to handle_post function
+        elif action == 'delete_quiz':
+            quiz_id = int(request.form.get('quiz_id'))
+            data['quizzes'] = [q for q in data.get('quizzes', []) if q['id'] != quiz_id]
+            save_data(data)
+            return jsonify({'success': True})
 
         elif action == 'reveal_all':
             quiz_id = int(request.form.get('quiz_id'))
