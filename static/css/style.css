@@ -2,16 +2,31 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #e6f7ff; /* Light blue background */
-    color: #333; /* Dark text */
+    background-color: var(--light-bg); /* Light blue background */
+    color: var(--dark-text); /* Dark text */
+}
+
+:root {
+    --light-bg: #f8f8ff; /* GhostWhite */
+    --dark-text: #0a0101;
+    --light-card-bg: #fffafa; /* Snow */
+    --dark-card-shadow: rgba(0, 0, 0, 0.2);
+    --light-border: #ddd;
+    --dark-mode-bg: #222; /* Almost Black */
+    --light-mode-text: #0f0000; /* Light Gray */
+    --dark-card-bg-dark-mode: #333; /* Dark card background */
+    --dark-shadow-dark-mode: rgba(255, 255, 255, 0.2);
+    --dark-badge-bg: #666;
+    --dark-nav-link-color: #fff;
+    --dark-nav-link-hover: #8ef508;
 }
 
 .card {
     transition: transform 0.2s;
     border-radius: 15px; /* Softer corners */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Deeper shadow */
-    background-color: #fff; /* White card background */
-    border: 1px solid #ddd; /* Subtle border */
+    box-shadow: 0 8px 16px var(--dark-card-shadow); /* Deeper shadow */
+    background-color: var(--light-card-bg); /* White card background */
+    border: 1px solid var(--light-border); /* Subtle border */
 }
 
 .card:hover {
@@ -66,7 +81,7 @@ body {
 .card-text {
     font-size: 2.0rem; /* Larger text */
     font-weight: 600; /* Bolder */
-    color: #000; /* Darker for contrast */
+    color: var(--dark-text); /* Darker for contrast */
     word-wrap: break-word;
     max-height: 100%;
     overflow-y: auto;
@@ -101,7 +116,7 @@ body {
 }
 
 .nav-link {
-    color: #eee !important;
+    color: #030303 !important;
     text-decoration: none;
     font-weight: bold;
     transition: color 0.3s ease;
@@ -113,36 +128,36 @@ body {
 
 /* Dark mode styles */
 body.dark-mode {
-    background-color: #333; /* Dark background */
-    color: #eee; /* Light text */
+    background-color: var(--dark-mode-bg); /* Dark background */
+    color: var(--light-mode-text); /* Light text */
 }
 
-.dark-mode .card {
-    box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2); /* Lighter shadow */
-    background-color: #444; /* Dark card background */
+body.dark-mode .card {
+    box-shadow: 0 8px 16px var(--dark-shadow-dark-mode); /* Lighter shadow */
+    background-color: var(--dark-card-bg-dark-mode); /* Dark card background */
 }
 
-.dark-mode .card-front,
-.dark-mode .card-back {
+body.dark-mode .card-front,
+body.dark-mode .card-back {
     background: linear-gradient(135deg, #444, #555); /* Dark gradient */
-    color: #eee;
+    color: var(--light-mode-text);
 }
 
-.dark-mode .card-text {
-    color: #eee;
+body.dark-mode .card-text {
+    color: var(--light-mode-text);
 }
 
-.dark-mode .badge {
-    background-color: #666;
+body.dark-mode .badge {
+    background-color: var(--dark-badge-bg);
     color: #fff;
 }
 
-.dark-mode .nav-link {
-    color: #aaa !important;
+body.dark-mode .nav-link {
+    color: var(--dark-nav-link-color) !important;
 }
 
-.dark-mode .nav-link:hover {
-    color: #ccc !important;
+body.dark-mode .nav-link:hover {
+    color: var(--dark-nav-link-hover) !important;
 }
 
 /* Sidebar Styles */
