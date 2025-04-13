@@ -1,7 +1,11 @@
 function loadPlugin(pluginName) {
     if (pluginName !== 'diagram_quiz') return;
 
-    const content = document.getElementById('content');
+    const content = document.getElementById('page-content'); // Corrected ID
+    if (!content) {
+        console.error("Target element 'page-content' not found for diagram quiz module.");
+        return;
+    }
     content.innerHTML = `
         <style>
             .diagram-quiz-app {
@@ -22,6 +26,7 @@ function loadPlugin(pluginName) {
                 background-color: pink;
                 cursor: pointer;
                 border: 2px dashed red;
+                transition: border-color 0.3s ease-out; /* Add transition for feedback */
             }
             .spot-answer-container {
                 position: absolute;
@@ -378,15 +383,30 @@ function initDiagramQuizApp() {
                 .then(response => response.json())
                 .then(data => {
                     const feedbackDiv = answerContainer.querySelector('.spot-feedback');
+                    const spotElement = hiddenSpotsContainer.querySelector(`.hidden-spot[data-index="${index}"]`); // Get the spot element
+
                     if (data.is_correct) {
                         feedbackDiv.innerHTML = `<div class="alert alert-success">Correct! The answer is: ${data.correct_answer}</div>`;
+                        if (spotElement) {
+                            spotElement.style.borderColor = 'green'; // Correct feedback
+                        }
                     } else {
                         feedbackDiv.innerHTML = `<div class="alert alert-danger">Incorrect. Try again!</div>`;
+                        if (spotElement) {
+                            spotElement.style.borderColor = 'red'; // Incorrect feedback
+                        }
                     }
                     answerContainer.querySelector('.spot-answer-input').value = '';
+
+                    // Reset border color after a delay
+                    if (spotElement) {
+                        setTimeout(() => {
+                            spotElement.style.borderColor = 'red'; // Back to default dashed red
+                        }, 1000); // Reset after 1 second
+                    }
                 });
             });
-            
+
             answerContainer.querySelector('.reveal-spot').addEventListener('click', () => {
                 spotElement.style.display = 'none';
                 const feedbackDiv = answerContainer.querySelector('.spot-feedback');
@@ -593,13 +613,7 @@ function showAnswerPopup(x, y, width, height, spotIndex) {
     function removeSpotForm(spotForm, spotId) {
         spotFormsContainer.removeChild(spotForm);
         hiddenSpots.splice(spotId, 1);
-        
-        // Remove any associated popup
-        const popup = creatorAnswerPopups.querySelector(`[data-spot-index="${spotId}"]`);
-        if (popup) {
-            creatorAnswerPopups.removeChild(popup);
-        }
-        
+
         // Redraw canvas
         redrawCreatorCanvas();
         

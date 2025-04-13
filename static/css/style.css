@@ -144,3 +144,86 @@ body.dark-mode {
 .dark-mode .nav-link:hover {
     color: #ccc !important;
 }
+
+/* Sidebar Styles */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* Start hidden */
+    width: 250px;
+    height: 100vh;
+    padding-top: 60px; /* Space for navbar */
+    transition: left 0.3s ease;
+    z-index: 1030; /* Ensure it's above content but below modals if any */
+    overflow-y: auto;
+}
+
+#sidebar.active {
+    left: 0; /* Slide in */
+}
+
+#main-content {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+    padding-top: 56px; /* Adjust based on navbar height */
+    min-height: calc(100vh - 56px); /* Ensure footer stays at bottom */
+    display: flex;
+    flex-direction: column;
+}
+
+#main-content.shifted {
+    margin-left: 250px; /* Push content when sidebar is active */
+}
+
+#page-content {
+    flex-grow: 1; /* Make content area fill available space */
+}
+
+/* Adjust navbar z-index to be above sidebar */
+.navbar {
+    z-index: 1040;
+}
+
+/* Style sidebar links */
+#sidebar .nav-link {
+    padding: 10px 15px;
+    color: #adb5bd; /* Lighter text color */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active { /* Add active class styling if needed */
+    background-color: #495057;
+    color: #fff;
+}
+
+/* Dark mode adjustments for sidebar */
+body.dark-mode #sidebar {
+    background-color: #212529 !important; /* Ensure dark background */
+}
+
+body.dark-mode #sidebar .nav-link {
+    color: #adb5bd;
+}
+
+body.dark-mode #sidebar .nav-link:hover,
+body.dark-mode #sidebar .nav-link.active {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Flashcard Rating Feedback */
+.flashcard-card .card-inner {
+    /* Ensure transition includes border color */
+    transition: transform 0.6s, border-color 0.2s ease-out;
+    border: 3px solid transparent; /* Add transparent border for smooth transition */
+    box-sizing: border-box; /* Include border in element's total width/height */
+}
+
+.flashcard-card.rating-feedback-good .card-inner {
+    border-color: rgba(25, 135, 84, 0.7); /* Success color (Bootstrap green), semi-transparent */
+}
+
+.flashcard-card.rating-feedback-bad .card-inner {
+    border-color: rgba(220, 53, 69, 0.7); /* Danger color (Bootstrap red), semi-transparent */
+}

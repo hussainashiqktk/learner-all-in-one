@@ -1,7 +1,11 @@
 function loadPlugin(pluginName) {
     if (pluginName !== 'flashcard') return;
 
-    const content = document.getElementById('content');
+    const content = document.getElementById('page-content'); // Corrected ID
+    if (!content) {
+        console.error("Target element 'page-content' not found for flashcard module.");
+        return;
+    }
     content.innerHTML = `
         <div class="flashcard-app container-fluid">
             <ul class="nav nav-tabs mb-4" id="flashcardTabs" role="tablist">
@@ -87,10 +91,12 @@ function loadPlugin(pluginName) {
                                             <div class="mb-3">
                                                 <label for="front" class="form-label">Front (Question, supports Markdown)</label>
                                                 <textarea class="form-control" id="front" name="front" rows="3" required></textarea>
+                                                <div id="frontPreview" class="mt-2 p-2 border rounded bg-light" style="min-height: 50px;"></div>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="back" class="form-label">Back (Answer, supports Markdown)</label>
                                                 <textarea class="form-control" id="back" name="back" rows="3" required></textarea>
+                                                <div id="backPreview" class="mt-2 p-2 border rounded bg-light" style="min-height: 50px;"></div>
                                             </div>
                                             <div class="row">
                                                 <div class="col-md-6 mb-3">
@@ -223,8 +229,26 @@ function initFlashcardApp() {
     const exportBtn = document.getElementById('exportBtn');
     const importForm = document.getElementById('importForm');
     const importFile = document.getElementById('importFile');
+    const frontInput = document.getElementById('front');
+    const backInput = document.getElementById('back');
+    const frontPreview = document.getElementById('frontPreview');
+    const backPreview = document.getElementById('backPreview');
+
 
     loadData();
+
+    // Event listeners for Markdown preview
+    if (frontInput && frontPreview) {
+        frontInput.addEventListener('input', () => {
+            frontPreview.innerHTML = marked.parse(frontInput.value);
+        });
+    }
+    if (backInput && backPreview) {
+        backInput.addEventListener('input', () => {
+            backPreview.innerHTML = marked.parse(backInput.value);
+        });
+    }
+
 
     flashcardElement.addEventListener('click', flipCard);
     flipBtn.addEventListener('click', flipCard);
@@ -265,11 +289,17 @@ function initFlashcardApp() {
             if (cards.length > 0) {
                 displayCurrentCard();
             } else {
-                cardTextFront.innerHTML = 'No cards available.';
-                cardTextBack.innerHTML = 'Create some cards!';
+                // Enhanced "No Cards" message
+                cardTextFront.innerHTML = '<div class="text-center p-3"><i class="fas fa-box-open fa-2x mb-2"></i><br>No cards to study!<br><small>Go to the "Create" tab to add some.</small></div>';
+                cardTextBack.innerHTML = '<div class="text-center p-3"><i class="fas fa-plus-circle fa-2x mb-2"></i><br>Ready to learn?<br><small>Add your first flashcard!</small></div>';
+                // Disable buttons if no cards
+                [flipBtn, nextBtn, prevBtn, ...difficultyBtns].forEach(btn => btn.disabled = true);
+                flashcardElement.style.cursor = 'default'; // Remove pointer cursor
             }
         } catch (error) {
             console.error('Error loading flashcards:', error);
+            cardTextFront.innerHTML = '<div class="text-center p-3 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Error loading cards.</div>';
+            cardTextBack.innerHTML = '<div class="text-center p-3 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Could not load data.</div>';
             showMessage('Error loading flashcards', 'danger');
         }
     }
@@ -295,13 +325,22 @@ function initFlashcardApp() {
     }
 
     function displayCurrentCard() {
-        if (cards.length === 0) return;
+        if (cards.length === 0) {
+             // Re-enable buttons if cards are loaded later (e.g., after import)
+            [flipBtn, nextBtn, prevBtn, ...difficultyBtns].forEach(btn => btn.disabled = false);
+            flashcardElement.style.cursor = 'pointer';
+            return;
+        }
+        // Ensure buttons are enabled if we have cards
+        [flipBtn, nextBtn, prevBtn, ...difficultyBtns].forEach(btn => btn.disabled = false);
+        flashcardElement.style.cursor = 'pointer';
+
         const card = cards[currentCardIndex];
         // Render Markdown using marked.js
         cardTextFront.innerHTML = marked.parse(card.front);
         cardTextBack.innerHTML = marked.parse(card.back);
         [cardTagsFront, cardTagsBack].forEach(tagsElement => {
-            tagsElement.innerHTML = '';
+            tagsElement.innerHTML = ''; // Clear previous tags/category
             if (card.tags && card.tags.length > 0) {
                 card.tags.forEach(tag => {
                     const tagElement = document.createElement('span');
@@ -325,6 +364,7 @@ function initFlashcardApp() {
     }
 
     function showNextCard() {
+        flashcardElement.classList.remove('rating-feedback-good', 'rating-feedback-bad'); // Clear feedback
         if (cards.length === 0) return;
         currentCardIndex = (currentCardIndex + 1) % cards.length;
         isFlipped = false;
@@ -332,6 +372,7 @@ function initFlashcardApp() {
     }
 
     function showPreviousCard() {
+        flashcardElement.classList.remove('rating-feedback-good', 'rating-feedback-bad'); // Clear feedback
         if (cards.length === 0) return;
         currentCardIndex = (currentCardIndex - 1 + cards.length) % cards.length;
         isFlipped = false;
@@ -339,6 +380,12 @@ function initFlashcardApp() {
     }
 
     async function rateCard(score) {
+        // Add visual feedback
+        const feedbackClass = score >= 3 ? 'rating-feedback-good' : 'rating-feedback-bad';
+        flashcardElement.classList.add(feedbackClass);
+        // Remove feedback after a short delay, before loading next card potentially
+        setTimeout(() => flashcardElement.classList.remove(feedbackClass), 500);
+
         if (cards.length === 0) return;
         const cardId = cards[currentCardIndex].id;
         try {
@@ -352,10 +399,19 @@ function initFlashcardApp() {
                 })
             });
             if (response.ok) {
-                showNextCard();
-                loadData();
+                // Delay showing next card slightly to allow feedback visibility
+                setTimeout(() => {
+                    showNextCard();
+                    loadData(); // Reload data to update stats and potentially card order/due status
+                }, 150); // Short delay
+            } else {
+                 // If rating failed, remove feedback immediately
+                 flashcardElement.classList.remove('rating-feedback-good', 'rating-feedback-bad');
+                 const errorText = await response.text();
+                 throw new Error(`Failed to save rating: ${errorText}`);
             }
         } catch (error) {
+             flashcardElement.classList.remove('rating-feedback-good', 'rating-feedback-bad'); // Remove feedback on error
             console.error('Error rating card:', error);
             showMessage('Error saving your rating', 'danger');
         }
@@ -378,10 +434,16 @@ function initFlashcardApp() {
                 isFlipped = false;
                 updateUI();
                 if (cards.length > 0) {
+                    // Cards found, enable buttons and display
+                    [flipBtn, nextBtn, prevBtn, ...difficultyBtns].forEach(btn => btn.disabled = false);
+                    flashcardElement.style.cursor = 'pointer';
                     displayCurrentCard();
                 } else {
-                    cardTextFront.innerHTML = `No cards in ${selectedCategory}.`;
-                    cardTextBack.innerHTML = 'Create some cards!';
+                    // No cards found, disable buttons and show message
+                    cardTextFront.innerHTML = `<div class="text-center p-3"><i class="fas fa-box-open fa-2x mb-2"></i><br>No cards in ${selectedCategory}.</div>`;
+                    cardTextBack.innerHTML = '<div class="text-center p-3"><i class="fas fa-plus-circle fa-2x mb-2"></i><br>Create some cards!</div>';
+                    [flipBtn, nextBtn, prevBtn, ...difficultyBtns].forEach(btn => btn.disabled = true);
+                    flashcardElement.style.cursor = 'default';
                 }
             });
         }
@@ -413,9 +475,11 @@ function initFlashcardApp() {
             const data = await response.json();
             showMessage('Flashcard created successfully!', 'success');
             flashcardForm.reset();
+            frontPreview.innerHTML = ''; // Clear preview
+            backPreview.innerHTML = '';  // Clear preview
             newCategoryInput.style.display = 'none';
             categorySelect.value = '';
-            loadData();
+            loadData(); // Reload data to update categories and card list
         } catch (error) {
             console.error('Error:', error);
             showMessage(`Error creating flashcard: ${error.message}`, 'danger');

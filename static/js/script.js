@@ -24,5 +24,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Sidebar Toggle Logic
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+
+    if (sidebarToggle && sidebar && mainContent) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            mainContent.classList.toggle('shifted');
+        });
+    }
+
     body.style.transition = 'background-color 0.3s, color 0.3s';
 });
