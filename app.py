@@ -30,9 +30,17 @@ def load_plugins():
 
 plugins = load_plugins()
 
+def extract_module_titles():
+    module_titles = []
+    for module_name, plugin in plugins.items():
+        module_titles.append((module_name, plugin['title']))
+    return module_titles
+
+module_titles = extract_module_titles()
+
 @app.route('/')
 def home():
-    return render_template('home.html', plugins=plugins)
+    return render_template('home.html', plugins=plugins, modules=module_titles)
 
 @app.route('/plugin/<plugin_name>', methods=['GET', 'POST'])
 def plugin_page(plugin_name):
@@ -42,7 +50,7 @@ def plugin_page(plugin_name):
     if request.method == 'POST':
         return plugins[plugin_name]['handle_post'](request)
     
-    return render_template('base.html', plugin_name=plugin_name)
+    return render_template('base.html', plugin_name=plugin_name, modules=module_titles)
 
 # Add this new route to serve JS files from module directories
 @app.route('/module_assets/<module_name>/<path:filename>')

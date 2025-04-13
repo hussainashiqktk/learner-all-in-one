@@ -1,8 +1,19 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #e6f7ff; /* Light blue background */
+    color: #333; /* Dark text */
+}
+
 .card {
     transition: transform 0.2s;
     border-radius: 15px; /* Softer corners */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Deeper shadow */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+    background-color: #fff; /* White card background */
+    border: 1px solid #ddd; /* Subtle border */
 }
+
 .card:hover {
     transform: scale(1.05);
 }
@@ -37,7 +48,7 @@
     backface-visibility: hidden;
     border-radius: 15px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    background: linear-gradient(135deg, #f9f9f9, #ffffff); /* Subtle gradient */
+    background: linear-gradient(135deg, #e6f7ff, #ffffff); /* Subtle gradient */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -53,9 +64,9 @@
 }
 
 .card-text {
-    font-size: 1.8rem; /* Larger text */
+    font-size: 2.0rem; /* Larger text */
     font-weight: 600; /* Bolder */
-    color: #222; /* Darker for contrast */
+    color: #000; /* Darker for contrast */
     word-wrap: break-word;
     max-height: 100%;
     overflow-y: auto;
@@ -67,6 +78,69 @@
 }
 
 .badge {
-    font-size: 1rem; /* Slightly larger badges */
-    padding: 0.5em 1em;
+    font-size: 1.1rem; /* Slightly larger badges */
+    padding: 0.6em 1.2em;
+    border-radius: 5px; /* Rounded corners */
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #007bff; /* Blue navbar background */
+    padding: 10px 0;
+}
+
+.navbar-nav {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    margin-left: auto; /* Push to the right */
+}
+
+.nav-item {
+    margin-left: 15px;
+}
+
+.nav-link {
+    color: #eee !important;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #333; /* Dark background */
+    color: #eee; /* Light text */
+}
+
+.dark-mode .card {
+    box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2); /* Lighter shadow */
+    background-color: #444; /* Dark card background */
+}
+
+.dark-mode .card-front,
+.dark-mode .card-back {
+    background: linear-gradient(135deg, #444, #555); /* Dark gradient */
+    color: #eee;
+}
+
+.dark-mode .card-text {
+    color: #eee;
+}
+
+.dark-mode .badge {
+    background-color: #666;
+    color: #fff;
+}
+
+.dark-mode .nav-link {
+    color: #aaa !important;
+}
+
+.dark-mode .nav-link:hover {
+    color: #ccc !important;
 }

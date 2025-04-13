@@ -12,6 +12,16 @@
         <nav class="navbar navbar-dark bg-dark">
             <div class="container">
                 <a class="navbar-brand" href="/">Home</a>
+                <ul class="navbar-nav">
+                    {% for module_name, module_title in modules %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/plugin/{{ module_name }}">{{ module_title }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="nav-item">
+                        <button id="darkModeToggle" class="btn btn-outline-light">Dark Mode</button>
+                    </li>
+                </ul>
             </div>
         </nav>
 
